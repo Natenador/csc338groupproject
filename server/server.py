@@ -5,7 +5,7 @@ import queue
 class Client(threading.Thread):
 
 	def __init__(self, conn_socket, ip, port):
-		Thread.__init__(self)
+		threading.Thread.__init__(self)
 		self.running = True;
 		self.port = port
 		self.ip = ip
@@ -15,7 +15,7 @@ class Client(threading.Thread):
 		while self.running:
 			data = self.conn_socket.recv(2048)
 			print ("Server recieved data: ", data)
-			self.conn_socket.send("Message recieved")
+			self.conn_socket.send("Message recieved".encode('utf-8'))
 
 	def sendMessage(self, message):
 		self.conn_socket.send(message)
