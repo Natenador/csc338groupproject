@@ -31,5 +31,5 @@ def signIn(userLogin):
 			else:
 				return 1	
 	createUser(userLogin)
-	return 0
-		
+	return 2
+

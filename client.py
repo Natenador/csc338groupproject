@@ -11,7 +11,7 @@ tcpClient.connect((host, port))
 while MESSAGE != 'exit':
     tcpClient.send(MESSAGE.encode("utf-8"))     
     data = tcpClient.recv(BUFFER_SIZE)
-    print("Client2 received data:", data)
+    print("Client2 received data:", data.decode('utf-8'))  #TWM added decode call to decode the incoming encoded message
     MESSAGE = input("tcpClient: Enter message to continue/ Enter exit:")
  
 tcpClient.close()

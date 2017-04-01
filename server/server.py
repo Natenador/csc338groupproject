@@ -14,7 +14,7 @@ class Client(threading.Thread):
 	def run(self):
 		while self.running:
 			data = self.conn_socket.recv(2048)
-			print ("Server recieved data: ", data)
+			print ("Server recieved data: ", data.decode('utf-8')) #TWM added a decode call to decode the encoded message
 			self.conn_socket.send("Message recieved".encode('utf-8'))
 
 	def sendMessage(self, message):
@@ -49,7 +49,7 @@ class Server:
 			(conn, (ip, port)) = self.server.accept()
 			newthread = Client(conn, ip, port)
 			newthread.start()
-			if self.threads.len() + 1 > Server.MAX_CLIENT_COUNT:
+			if len(self.threads) + 1 > Server.MAX_CLIENT_COUNT:	#TWM fixed len(self.threads)
 				newthread.sendMessage("I'm sorry, there are too many connections to the server at the moment. Please try again later.")
 				newthread.disconnect()
 			else:
