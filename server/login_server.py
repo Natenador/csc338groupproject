@@ -18,11 +18,13 @@ def readUserList():
         userList = [line.strip('\n') for line in userList]
         return userList
 
-#Checks user credentials. Returns 0 if credentials match OR if no user by that name exists, one is created.
+#Checks user credentials. 
+#Returns 0 if credentials match.
 #Returns 1 if password does not match for the username given
+#Returns 2 if that username was not found, and creates that user
 #userLogin format: ["name", "password"]
-def signIn(userLogin):
-	userList = readUserList()
+#userList is list of all users
+def signIn(userLogin, userList):
 	for user in userList:
 		name,pword = user.split(":")
 		if (userLogin[0] == name):

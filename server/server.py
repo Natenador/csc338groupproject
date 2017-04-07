@@ -1,21 +1,55 @@
 import threading
 import socket
 import queue
+import login_server as login
 
 class Client(threading.Thread):
 
 	def __init__(self, conn_socket, ip, port):
 		threading.Thread.__init__(self)
-		self.running = True;
+		self.running = True
 		self.port = port
 		self.ip = ip
 		self.conn_socket = conn_socket
 
+		#Login variables
+		self.authorized = False
+		self.userData = []
+
 	def run(self):
+		userList = login.readUserList()
+		auth1 = 'AUTH'
+		auth2 = 'AUTH2'
+		#Send authorization code to client
+		self.conn_socket.send('AUTH'.encode('utf-8'))
+		
+		while(self.authorized == False):
+			#Receive username and password from client
+			userData = self.conn_socket.recv(2048)
+			userData = userData.decode('utf-8')
+			name, pword = userData.split(':')
+			userData = [name, pword]
+			authFlag = login.signIn(userData, userList)
+			if authFlag == 0: #username and password match
+				print("\nUser signed in: ", userData[0])
+				self.conn_socket.send('AUTH_PASS'.encode('utf-8'))
+				self.userData = userData
+				self.authorized = True
+			elif authFlag == 1: #incorrect password
+				self.conn_socket.send('AUTH2'.encode('utf-8'))
+				print("\nUser failed password attempt: ", userData[0])
+			else: #User created
+				print("\nUser created: ", userData[0])
+				self.userData = userData
+				self.authorized = True
+
+
+
 		while self.running:
 			data = self.conn_socket.recv(2048)
 			print ("Server recieved data: ", data.decode('utf-8')) #TWM added a decode call to decode the encoded message
 			self.conn_socket.send("Message recieved".encode('utf-8'))
+			print('Server sent notification')
 
 	def sendMessage(self, message):
 		self.conn_socket.send(message)
