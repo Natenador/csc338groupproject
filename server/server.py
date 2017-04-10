@@ -40,6 +40,7 @@ class Client(threading.Thread):
 				print("\nUser failed password attempt: ", userData[0])
 			else: #User created
 				print("\nUser created: ", userData[0])
+				self.conn_socket.send('AUTH_PASS')
 				self.userData = userData
 				self.authorized = True
 
