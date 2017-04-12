@@ -2,20 +2,23 @@ import threading
 import socket
 import queue
 
+TOO_MANY_CONNECTIONS_ERROR = "/e:-1"
+
 class Client(threading.Thread):
 
-	def __init__(self, conn_socket, ip, port):
+	def __init__(self, conn_socket, ip, port, que):
 		threading.Thread.__init__(self)
 		self.running = True;
 		self.port = port
 		self.ip = ip
 		self.conn_socket = conn_socket
+		self.messages = que
 
 	def run(self):
 		while self.running:
 			data = self.conn_socket.recv(2048)
 			print ("Server recieved data: ", data)
-			self.conn_socket.send("Message recieved".encode('utf-8'))
+			self.messages.put(data.decode("utf-8")
 
 	def sendMessage(self, message):
 		self.conn_socket.send(message)
@@ -26,12 +29,14 @@ class Client(threading.Thread):
 	def connect(self):
 		self.running = True
 
+
+
 class Server:
 	
 	TCP_IP = "0.0.0.0"
 	SERVER_LISTEN_PORT = 13000
 	BUFFER_SIZE = 1024
-	MAX_CLIENT_COUNT = 20
+	MAX_CLIENT_COUNT = 1
 
 	def __init__(self):
 		self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -47,12 +52,11 @@ class Server:
 			self.server.listen(4)
 			print ("Waiting for a connection...")
 			(conn, (ip, port)) = self.server.accept()
-			newthread = Client(conn, ip, port)
-			newthread.start()
-			if self.threads.len() + 1 > Server.MAX_CLIENT_COUNT:
-				newthread.sendMessage("I'm sorry, there are too many connections to the server at the moment. Please try again later.")
-				newthread.disconnect()
+			if len(self.threads) + 1 > Server.MAX_CLIENT_COUNT:
+				conn.send(TOO_MANY_CONNECTIONS_ERROR.encode("utf-8"))
 			else:
+				newthread = Client(conn, ip, port, self.message_queue)
+				newthread.start()
 				self.threads.append(newthread)
 
 		for t in self.threads:
@@ -63,6 +67,7 @@ class Server:
 
 	def connect(self):
 		self.running = True
+                                          
 
 		
 def main():
