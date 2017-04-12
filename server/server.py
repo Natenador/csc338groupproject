@@ -18,29 +18,30 @@ class Client(threading.Thread):
 
 	def run(self):
 		userList = login.readUserList()
-		auth1 = 'AUTH'
-		auth2 = 'AUTH2'
 		#Send authorization code to client
 		self.conn_socket.send('AUTH'.encode('utf-8'))
 		
+		#While NOT authorized
 		while(self.authorized == False):
 			#Receive username and password from client
 			userData = self.conn_socket.recv(2048)
 			userData = userData.decode('utf-8')
+			#split userData string into name & password, then put them into a list.
 			name, pword = userData.split(':')
 			userData = [name, pword]
+			#Check if the authorization passes
 			authFlag = login.signIn(userData, userList)
 			if authFlag == 0: #username and password match
 				print("\nUser signed in: ", userData[0])
-				self.conn_socket.send('AUTH_PASS'.encode('utf-8'))
+				self.conn_socket.send('AUTH_PASS'.encode('utf-8')) #send authorization pass to client
 				self.userData = userData
 				self.authorized = True
 			elif authFlag == 1: #incorrect password
-				self.conn_socket.send('AUTH2'.encode('utf-8'))
+				self.conn_socket.send('AUTH_FAIL'.encode('utf-8')) #send authorization fail to client
 				print("\nUser failed password attempt: ", userData[0])
 			else: #User created
 				print("\nUser created: ", userData[0])
-				self.conn_socket.send('AUTH_PASS'.encode('utf-8'))
+				self.conn_socket.send('AUTH_PASS'.encode('utf-8')) #send authorization pass to client
 				self.userData = userData
 				self.authorized = True
 

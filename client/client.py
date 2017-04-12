@@ -13,7 +13,7 @@ tcpClient.connect((host, port))
 data = tcpClient.recv(BUFFER_SIZE)
 
 while MESSAGE != 'exit':
-
+	#Check to see if user credentials are required by server
 	if (data.decode('utf-8') == 'AUTH'):
 		userData = login.signIn()
 		name, pword = userData.split(':')
@@ -21,8 +21,8 @@ while MESSAGE != 'exit':
 		data = tcpClient.recv(BUFFER_SIZE)
 		if data.decode('utf-8') == 'AUTH_PASS':
 			print("\nSigned in as: ", name)
-
-	elif (data.decode('utf-8') == 'AUTH2'):
+	#Check if credentials fail
+	elif (data.decode('utf-8') == 'AUTH_FAIL'):
 		print("\nIncorrect password.")
 		data = 'AUTH'.encode('utf-8')
 
