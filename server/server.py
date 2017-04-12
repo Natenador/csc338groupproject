@@ -20,7 +20,7 @@ class Client(threading.Thread):
 		userList = login.readUserList()
 		#Send authorization code to client
 		self.conn_socket.send('AUTH'.encode('utf-8'))
-		
+		userData = ''
 		#While NOT authorized
 		while(self.authorized == False):
 			#Receive username and password from client
@@ -49,7 +49,7 @@ class Client(threading.Thread):
 
 		while self.running:
 			data = self.conn_socket.recv(2048)
-			print ("Server recieved data: ", data.decode('utf-8')) #TWM added a decode call to decode the encoded message
+			print ("Server recieved data: %s -> %s" % (userData[0], data.decode('utf-8'))) #TWM added a decode call to decode the encoded message
 			self.conn_socket.send("Message recieved".encode('utf-8'))
 			print('Server sent notification')
 
