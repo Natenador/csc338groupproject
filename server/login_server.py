@@ -22,16 +22,16 @@ def readUserList():
 #Returns 0 if credentials match.
 #Returns 1 if password does not match for the username given
 #Returns 2 if that username was not found, and creates that user
-#userLogin format: ["name", "password"]
+#userData format: ["name", "password"]
 #userList is list of all users
-def signIn(userLogin, userList):
+def checkCreds(userData):
+	userList = readUserList()
 	for user in userList:
 		name,pword = user.split(":")
-		if (userLogin[0] == name):
-			if (userLogin[1] == pword):
+		if (userData[0] == name):
+			if (userData[1] == pword):
 				return 0
 			else:
 				return 1	
-	createUser(userLogin)
+	createUser(userData)
 	return 2
-

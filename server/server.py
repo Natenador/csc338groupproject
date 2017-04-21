@@ -14,44 +14,8 @@ class Client(threading.Thread):
 
 		#Login variables
 		self.authorized = False
-		self.userData = []
+		self.userData = ['',''] #userData[0] == name | userData[1] == password
 
-	def run(self):
-		userList = login.readUserList()
-		#Send authorization code to client
-		self.conn_socket.send('AUTH'.encode('utf-8'))
-		userData = ''
-		#While NOT authorized
-		while(self.authorized == False):
-			#Receive username and password from client
-			userData = self.conn_socket.recv(2048)
-			userData = userData.decode('utf-8')
-			#split userData string into name & password, then put them into a list.
-			name, pword = userData.split(':')
-			userData = [name, pword]
-			#Check if the authorization passes
-			authFlag = login.signIn(userData, userList)
-			if authFlag == 0: #username and password match
-				print("\nUser signed in: ", userData[0])
-				self.conn_socket.send('AUTH_PASS'.encode('utf-8')) #send authorization pass to client
-				self.userData = userData
-				self.authorized = True
-			elif authFlag == 1: #incorrect password
-				self.conn_socket.send('AUTH_FAIL'.encode('utf-8')) #send authorization fail to client
-				print("\nUser failed password attempt: ", userData[0])
-			else: #User created
-				print("\nUser created: ", userData[0])
-				self.conn_socket.send('AUTH_PASS'.encode('utf-8')) #send authorization pass to client
-				self.userData = userData
-				self.authorized = True
-
-
-
-		while self.running:
-			data = self.conn_socket.recv(2048)
-			print ("Server recieved data: %s -> %s" % (userData[0], data.decode('utf-8'))) #TWM added a decode call to decode the encoded message
-			self.conn_socket.send("Message recieved".encode('utf-8'))
-			print('Server sent notification')
 
 	def sendMessage(self, message):
 		self.conn_socket.send(message)
@@ -61,6 +25,42 @@ class Client(threading.Thread):
 
 	def connect(self):
 		self.running = True
+
+	#Requests user credentials from client - sets userData equal to these credentials
+	#Checks data file to see if they match
+	#Sign in if match | Request new credentials if no match | create new user if no match is found
+	def signIn(self):
+		#Send authorization code to client
+		self.conn_socket.send('AUTH'.encode('utf-8'))
+		#While NOT authorized
+		while(self.authorized == False):
+			#Receive username and password from client
+			self.userData = self.conn_socket.recv(2048)
+			self.userData = self.userData.decode('utf-8')
+			#split userData string into name & password, then put them into a list.
+			name, pword = self.userData.split(':')
+			self.userData = [name, pword]
+			#Check if the authorization passes
+			authFlag = login.checkCreds(self.userData)
+			if authFlag == 0: #username and password match
+				print("\nUser signed in: ", self.userData[0])
+				self.conn_socket.send('AUTH_PASS'.encode('utf-8')) #send authorization pass to client
+				self.authorized = True
+			elif authFlag == 1: #incorrect password
+				self.conn_socket.send('AUTH_FAIL'.encode('utf-8')) #send authorization fail to client
+				print("\nUser failed password attempt: ", self.userData[0])
+			else: #User created
+				print("\nUser created: ", self.userData[0])
+				self.conn_socket.send('AUTH_PASS'.encode('utf-8')) #send authorization pass to client
+				self.authorized = True
+
+	def run(self):
+		Client.signIn(self)
+		while self.running:
+			data = self.conn_socket.recv(2048)
+			print ("Server recieved data: %s -> %s" % (self.userData[0], data.decode('utf-8'))) #TWM added a decode call to decode the encoded message
+			self.conn_socket.send("Message recieved".encode('utf-8'))
+			print('Server sent notification')
 
 class Server:
 	
