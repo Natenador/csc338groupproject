@@ -1,0 +1,38 @@
+INFO:root:04/23/2017 18:47:30: Starting server...
+INFO:root:04/23/2017 18:47:30: Waiting for a connection...
+INFO:root:04/23/2017 18:47:37: Made a connection with nate at 192.168.1.67 on port 59753
+INFO:root:04/23/2017 18:47:37: Waiting for a connection...
+INFO:root:04/23/2017 18:47:44: Made a connection with bob at 192.168.1.67 on port 59754
+INFO:root:04/23/2017 18:47:44: Waiting for a connection...
+INFO:root:04/23/2017 18:47:46: Server recieved data: sup nate?
+INFO:root:04/23/2017 18:47:46: bob is sending 'bob: sup nate?' to all clients
+INFO:root:04/23/2017 18:47:51: Server recieved data: hey bob
+INFO:root:04/23/2017 18:47:51: nate is sending 'nate: hey bob' to all clients
+INFO:root:04/23/2017 18:48:07: Server recieved data: I'm going to talk with youu a while, and then I'll exit out and look at the server logs
+INFO:root:04/23/2017 18:48:07: nate is sending 'nate: I'm going to talk with youu a while, and then I'll exit out and look at the server logs' to all clients
+INFO:root:04/23/2017 18:48:14: Server recieved data: that sounds like a bunch of fun
+INFO:root:04/23/2017 18:48:14: bob is sending 'bob: that sounds like a bunch of fun' to all clients
+INFO:root:04/23/2017 18:48:18: Server recieved data: oh it will be
+INFO:root:04/23/2017 18:48:18: nate is sending 'nate: oh it will be' to all clients
+INFO:root:04/23/2017 18:48:38: Server recieved data: I can't wait for that 'genius' show
+INFO:root:04/23/2017 18:48:38: bob is sending 'bob: I can't wait for that 'genius' show' to all clients
+INFO:root:04/23/2017 18:48:42: Server recieved data: I know, me to
+INFO:root:04/23/2017 18:48:42: nate is sending 'nate: I know, me to' to all clients
+INFO:root:04/23/2017 18:48:43: Server recieved data: too
+INFO:root:04/23/2017 18:48:43: nate is sending 'nate: too' to all clients
+INFO:root:04/23/2017 18:49:10: Server recieved data: Ok, I'm going to exit and check the logs
+INFO:root:04/23/2017 18:49:10: nate is sending 'nate: Ok, I'm going to exit and check the logs' to all clients
+INFO:root:04/23/2017 18:49:14: Server recieved data: ok, bye
+INFO:root:04/23/2017 18:49:14: bob is sending 'bob: ok, bye' to all clients
+INFO:root:04/23/2017 18:49:17: nate has disconnected...
+INFO:root:04/23/2017 18:49:32: Server recieved data: now what do I do?
+INFO:root:04/23/2017 18:49:32: bob is sending 'bob: now what do I do?' to all clients
+INFO:root:04/23/2017 18:49:35: Server recieved data: Talk to myself?
+INFO:root:04/23/2017 18:49:35: bob is sending 'bob: Talk to myself?' to all clients
+INFO:root:04/23/2017 18:49:40: Server recieved data: I guess os
+INFO:root:04/23/2017 18:49:40: bob is sending 'bob: I guess os' to all clients
+INFO:root:04/23/2017 18:49:41: Server recieved data: so
+INFO:root:04/23/2017 18:49:41: bob is sending 'bob: so' to all clients
+INFO:root:04/23/2017 18:49:44: Server recieved data: bye myself!
+INFO:root:04/23/2017 18:49:44: bob is sending 'bob: bye myself!' to all clients
+INFO:root:04/23/2017 18:49:46: bob has disconnected...

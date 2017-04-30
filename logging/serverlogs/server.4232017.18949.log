@@ -1,0 +1,24 @@
+INFO:root:4/23/2017 18:9:49: Starting server...
+INFO:root:4/23/2017 18:9:49: Waiting for a connection...
+INFO:root:4/23/2017 18:9:56: Made a connection with nate at 192.168.1.67 on port 59632
+INFO:root:4/23/2017 18:9:56: Waiting for a connection...
+INFO:root:4/23/2017 18:9:58: Made a connection with bob at 192.168.1.67 on port 59633
+INFO:root:4/23/2017 18:9:58: Waiting for a connection...
+INFO:root:4/23/2017 18:10:1: Server recieved data: sup nate?
+INFO:root:4/23/2017 18:10:1: bob is sending 'bob: sup nate?' to all clients
+INFO:root:4/23/2017 18:10:8: Server recieved data: oh, not much
+INFO:root:4/23/2017 18:10:8: nate is sending 'nate: oh, not much' to all clients
+INFO:root:4/23/2017 18:10:24: Server recieved data: just going to test out the exiting again.
+INFO:root:4/23/2017 18:10:24: nate is sending 'nate: just going to test out the exiting again.' to all clients
+INFO:root:4/23/2017 18:10:30: Server recieved data: here we go
+INFO:root:4/23/2017 18:10:30: nate is sending 'nate: here we go' to all clients
+INFO:root:4/23/2017 18:10:32: nate has disconnected...
+INFO:root:4/23/2017 18:10:44: Server recieved data: eehhh
+INFO:root:4/23/2017 18:10:44: bob is sending 'bob: eehhh' to all clients
+INFO:root:4/23/2017 18:10:47: Server recieved data: hello?
+INFO:root:4/23/2017 18:10:47: bob is sending 'bob: hello?' to all clients
+INFO:root:4/23/2017 18:10:49: Server recieved data: anybody?
+INFO:root:4/23/2017 18:10:49: bob is sending 'bob: anybody?' to all clients
+INFO:root:4/23/2017 18:10:52: Server recieved data: I fixed it!
+INFO:root:4/23/2017 18:10:52: bob is sending 'bob: I fixed it!' to all clients
+INFO:root:4/23/2017 18:10:53: bob has disconnected...
