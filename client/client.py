@@ -1,39 +1,87 @@
 import socket
-import login_client as login
+from threading import Thread, Lock
+import time
 
-host = socket.gethostname() 
-port = 13000
-BUFFER_SIZE = 1024
-MESSAGE = ''
-server_msg = ''
+def getCreds():
+	name = input('Enter user name: ')
+	password = input('Enter password: ')
+	userData = name + ':' + password
+	return userData
 
-#User login info
-userData =''
+class Client:
+	host = socket.gethostname() 
+	port = 13000
+	BUFFER_SIZE = 1024
+	message_storage = []
+	mutex = Lock()
 
-tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
-tcpClient.connect((host, port))
- 
-server_msg = tcpClient.recv(BUFFER_SIZE)
+	def __init__(self):
+		self.running = True
+		self.incoming_mssg = ''
+		self.outgoing_mssg = ''
+		#User login info
+		self.userData = ''
 
-while MESSAGE != 'exit':
-	#Check to see if user credentials are required by server
-	if (server_msg.decode('utf-8') == 'AUTH'):
-		userData = login.getCreds() #Prompts user for credentials
-		name, pword = userData.split(':')
-		tcpClient.send(userData.encode('utf-8')) #Sends those credentials to server
-		userData = [name, pword]		
-		server_msg = tcpClient.recv(BUFFER_SIZE)
-		if server_msg.decode('utf-8') == 'AUTH_PASS': #If server accepts those credentials : sign in
-			print("\nSigned in as: ", name)
-	#Check if credentials fail
-	elif (server_msg.decode('utf-8') == 'AUTH_FAIL'): #If server denies those credentials : request new credentials
-		print("\nIncorrect password.")
-		server_msg = 'AUTH'.encode('utf-8')
+	def recvMssgs(self, tcp):
+		running = True
+		try:
+			tcpClient = tcp
+			storage = []
+			while self.running:
+				storage.append(tcpClient.recv(Client.BUFFER_SIZE))
+				if (len(storage) != 0):
+					Client.mutex.acquire()
+					while(len(storage) != 0):				
+						Client.message_storage.append(storage.pop(0))
+					Client.mutex.release()
+		except:
+			running = False
+	def start(self):
+		tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
+		tcpClient.connect((Client.host, Client.port))
+		
+		recvThread = Thread(target = Client.recvMssgs, name = 'mssg_thread', args = [self, tcpClient])
+		recvThread.start()
 
-	else:
-		MESSAGE = input("tcpClient: Enter message to continue/ Enter exit:")
-		tcpClient.send(MESSAGE.encode("utf-8"))
-		server_msg = tcpClient.recv(BUFFER_SIZE)
-		print("%s received server_msg:", server_msg.decode('utf-8'))  #TWM added decode call to decode the incoming encoded message
+		while(len(Client.message_storage) == 0):
+			print("\nWaiting on a message")
+		self.incoming_mssg = Client.message_storage.pop(0)
 
-tcpClient.close()
+		while self.outgoing_mssg != 'exit':
+			#Check to see if user credentials are required by server
+			if (self.incoming_mssg.decode('utf-8') == 'AUTH'):
+				self.userData = getCreds() #Prompts user for credentials
+				name, pword = self.userData.split(':')
+				tcpClient.send(self.userData.encode('utf-8')) #Sends those credentials to server
+				self.userData = [name, pword]		
+				#incoming_mssg.= tcpClient.recv(Client.BUFFER_SIZE)
+				while len(Client.message_storage) == 0:
+					print("\nWaiting on server authentication...")
+				self.incoming_mssg = Client.message_storage.pop(0)
+
+				if self.incoming_mssg.decode('utf-8') == 'AUTH_PASS': #If server accepts those credentials : sign in
+					print(self.incoming_mssg.decode('utf-8'))
+					print("\nSigned in as: ", name)
+			#Check if credentials fail
+			elif (self.incoming_mssg.decode('utf-8') == 'AUTH_FAIL'): #If server denies those credentials : request new credentials
+				print("\nIncorrect password.")
+				self.incoming_mssg = 'AUTH'.encode('utf-8')
+
+			else:
+				if (len(Client.message_storage) != 0):
+					Client.mutex.acquire()
+					while len(Client.message_storage) != 0:
+						self.incoming_mssg = Client.message_storage.pop(0)
+						print('\n', self.incoming_mssg)
+					Client.mutex.release()
+				self.outgoing_mssg = input("tcpClient: Enter message to continue/ Enter exit:")
+				tcpClient.send(self.outgoing_mssg.encode("utf-8"))
+		self.running = False
+		tcpClient.close()
+
+def main():
+	client = Client()
+	client.start()
+
+if __name__ == "__main__":
+	main()
