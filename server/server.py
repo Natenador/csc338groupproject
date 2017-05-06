@@ -58,13 +58,10 @@ def now(date_format):
     return now
  
 
-class ClientThread(threading.Thread):
-
-        
-        def __init__(self, id, conn_socket, ip, port, clients): #TWM - Removed username
+class ClientThread(threading.Thread):        
+        def __init__(self, id, conn_socket, ip, port, clients):
                 threading.Thread.__init__(self)
                 self.id = id
-                #self.username = username #TWM - Removed username
                 self.running = True
                 self.port = port
                 self.ip = ip
@@ -76,14 +73,15 @@ class ClientThread(threading.Thread):
                 self.userData = ['',''] #userData[0] == username | userData[1] == password
 
         def run(self):
-                self.signIn() #TWM - Call signIn function
+                self.signIn()
                 while self.running:
                         try:
                             message = self.conn_socket.recv(MAX_MESSAGE_SIZE).decode("utf-8")
                             if message == "exit":
+                                self.conn_socket.send(message.encode('utf-8'))
                                 self.running = False
                                 logging.info("%s: %s has disconnected...", now(LOG), self.userData[0])
-                            else:
+                            elif message != '':
                                 logging.info ("%s: Server recieved data: %s", now(LOG), message)
                                 id_message = self.userData[0] + ": " + message
                                 self.broadcast(id_message)
@@ -136,7 +134,6 @@ class ClientThread(threading.Thread):
                     print("\nUser created: ", self.userData[0])
                     self.conn_socket.send(AUTHORIZATION_PASS.encode('utf-8')) #send authorization pass to client
                     self.authorized = True
-        #TWM - signIn functionality for login - end
 
 
 
@@ -164,17 +161,18 @@ class Server:
             self.server.listen(4)
             logging.info ("%s: Waiting for a connection...", now(LOG))
             (conn, (ip, port)) = self.server.accept()
-            #username = conn.recv(MAX_MESSAGE_SIZE).decode("utf-8").split(':')[1]
-            #TWM username removed so it can be retrieved from within the thread alongside the password
-            logging.info ("%s: Incoming connection attempt at %s on port %d", now(LOG), ip, port) #TWM Updated the log statement
+            logging.info ("%s: Incoming connection attempt at %s on port %d", now(LOG), ip, port)
             if len(self.clients) + 1 > Server.MAX_CLIENT_COUNT:
                 conn.send(TOO_MANY_CONNECTIONS_ERROR.encode("utf-8"))
             else:
                 conn.send(CONNECTION_MADE_MESSAGE.encode("utf-8"))
-                newthread = ClientThread(Server.CURRENT_CONNECTION_ID, conn, ip, port, self.clients) #TWM - Removed username
+                newthread = ClientThread(Server.CURRENT_CONNECTION_ID, conn, ip, port, self.clients)
                 newthread.start()
                 self.clients.append(newthread)
                 Server.CURRENT_CONNECTION_ID += 1
+
+            for client in self.clients:
+                client.other_connections = self.clients
 
         for t in self.threads:
             t.join()
@@ -184,9 +182,7 @@ class Server:
 
     def connect(self):
         self.running = True
-                                          
-
-        
+    
 def main():
 
     server = Server()

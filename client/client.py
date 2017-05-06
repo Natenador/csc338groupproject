@@ -16,6 +16,7 @@ tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 USERNAME = ''
 THREAD_RUNNING = False
 
+#Login popup window
 class Login(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(Login, self).__init__(parent)
@@ -50,9 +51,51 @@ class Login(QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self, 'Error', 'Bad user or password')
 
+def signIn(inc_mssg, username, pword):    
+    while(inc_mssg == AUTHORIZATION_REQUIRED):
+        if (inc_mssg == AUTHORIZATION_REQUIRED):
+            userData = username + ':' + pword
+            tcpClient.send(userData.encode('utf-8'))
+
+            inc_mssg = tcpClient.recv(BUFFER_SIZE)
+            inc_mssg = inc_mssg.decode('utf-8')
+            if (inc_mssg == AUTHORIZATION_PASS):
+                return True
+            elif (inc_mssg == AUTHORIZATION_FAIL):
+                inc_mssg = AUTHORIZATION_REQUIRED
+                return False
+
+#Worker thread class for receiving messages
+class mssgThread(QtCore.QThread):
+    new_mssg = QtCore.pyqtSignal(str)
+
+    def __init__(self):
+        QtCore.QThread.__init__(self)
+
+    def run(self):
+        ERROR = False
+        THREAD_RUNNING = True
+        while not ERROR and THREAD_RUNNING ==True:
+            try:
+                message = tcpClient.recv(BUFFER_SIZE)
+                if isError(message.decode("utf-8")):
+                    ERROR = True
+                else:
+                    message = message.decode('utf-8')
+                    self.new_mssg.emit(message)
+            except socket.error as se:
+                message = "Error receiving message! Socket may have closed."
+                ERROR = True
+                self.new_mssg.emit(message)
+
 #GUI Class
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+
+        self.thread = mssgThread()
+        self.thread.start()
+        self.thread.new_mssg.connect(self.appendMssg)
+
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
         MainWindow.setMinimumSize(QtCore.QSize(800, 600))
@@ -124,6 +167,9 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
+        self.messageArea.setFocus(True)
+
+        self.messageArea.returnPressed.connect(self.sendMessage)
         self.sendButton.clicked.connect(self.sendMessage)
 
     def retranslateUi(self, MainWindow):
@@ -131,18 +177,23 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle('Chat Client')
         self.sendButton.setText('Send')
 
-    def sendMessage(self):
+    def sendMessage(self): #Sends messages and pushes the message to the chatArea
         mssg = self.messageArea.text()
-        self.messageArea.clear()
-        try:
-            self.chatArea.append(USERNAME + ":" + " " + mssg)
-            tcpClient.send(mssg.encode("utf-8"))
-        except socket.error as se:
-            self.chatArea.append("Error sending message:" + mssg)
+        if mssg != '':
+            self.messageArea.clear()
+            try:
+                self.chatArea.append(USERNAME + ":" + " " + mssg)
+                tcpClient.send(mssg.encode("utf-8"))
+            except socket.error as se:
+                self.chatArea.append("Error sending message:" + mssg)
 
-    def closeEvent(self, evnt):
+    def appendMssg(self, mssg): #Appends incoming messages to the chatArea
+        self.chatArea.append(mssg)
+
+    def closeEvent(self, evnt): #Things to do when GUI closes (May not be working yet)
         THREAD_RUNNING = False
-        print('Thread stopping...')
+        mssg = 'exit'
+        tcpClient.send(mssg.encode('utf-8'))
 
 #Takes the message from the server as an input
 #If the message equals any error, print the error and stop the loop to end the program
@@ -158,43 +209,14 @@ host = socket.gethostname()
 port = 13000
 BUFFER_SIZE = 1024
 
-
-def listen_for_messages(conn, ui):
-    ERROR = False
-    while not ERROR and THREAD_RUNNING == True:
-        try:
-            message = conn.recv(BUFFER_SIZE)
-            if isError(message.decode("utf-8")):
-                ERROR = True
-            else:
-                message = message.decode('utf-8')
-                ui.chatArea.append(message)
-        except socket.error as se:
-            ui.chatArea.append("Error receiving message! Socket may have closed.")
-            ERROR = True
-
-def signIn(inc_mssg, username, pword):    
-    while(inc_mssg == AUTHORIZATION_REQUIRED):
-        if (inc_mssg == AUTHORIZATION_REQUIRED):
-            userData = username + ':' + pword
-            tcpClient.send(userData.encode('utf-8'))
-
-            inc_mssg = tcpClient.recv(BUFFER_SIZE)
-            inc_mssg = inc_mssg.decode('utf-8')
-            if (inc_mssg == AUTHORIZATION_PASS):
-                return True
-            elif (inc_mssg == AUTHORIZATION_FAIL):
-                inc_mssg = AUTHORIZATION_REQUIRED
-                return False
-
 def main(): 
 
     tcpClient.connect((host, port))
     connection_response = tcpClient.recv(BUFFER_SIZE).decode("utf-8")
     connected = connection_response == CONNECTION_MADE_MESSAGE
+    #print(connection_response)
 
-    print(connection_response)
-
+    #Start the GUI
     app = QtWidgets.QApplication(sys.argv)
     login = Login()
     if login.exec_() == QtWidgets.QDialog.Accepted:
@@ -202,12 +224,7 @@ def main():
         ui = Ui_MainWindow()
         ui.setupUi(MainWindow)
         MainWindow.show()
-
-        if connected:            
-            listen_thread = threading.Thread(target = listen_for_messages, args = [tcpClient, ui])
-            THREAD_RUNNING = True
-            listen_thread.start()
-            sys.exit(app.exec_())  
+        sys.exit(app.exec_()) 
 
 if __name__ == "__main__":    
     main()    
