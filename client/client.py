@@ -18,12 +18,14 @@ THREAD_RUNNING = False
 
 #Login popup window
 class Login(QtWidgets.QDialog):
+    #Initialize Login GUI objects
     def __init__(self, parent=None):
         super(Login, self).__init__(parent)
         self.inc_mssg =  ''
         self.username = QtWidgets.QLineEdit(self)
         self.userLabel = QtWidgets.QLabel('Username: ', self)
         self.password = QtWidgets.QLineEdit(self)
+        self.password.setEchoMode(QtWidgets.QLineEdit.Password)
         self.pwordLabel = QtWidgets.QLabel('Password: ', self)
         self.buttonLogin = QtWidgets.QPushButton('Login', self)
         self.buttonLogin.clicked.connect(self.handleLogin)
@@ -38,6 +40,7 @@ class Login(QtWidgets.QDialog):
         self.setWindowTitle('User Login')
         self.setStyleSheet("QDialog {background: rgb(108,108,108); font-size: 12px; font-family:Arial, Helvetica, sans-serif} QLabel {font-size: 12px; font-family:Arial, Helvetica, sans-serif; color: white} QPushButton {background: rgb(165,67,67); font-size: 12px; font-family:Arial, Helvetica, sans-serif; font-weight: bold} ")
 
+    #Handles I/O
     def handleLogin(self):
         global USERNAME
         if self.inc_mssg == '':
@@ -51,6 +54,7 @@ class Login(QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(
                 self, 'Error', 'Bad user or password')
 
+#Handles authorization of username/password
 def signIn(inc_mssg, username, pword):    
     while(inc_mssg == AUTHORIZATION_REQUIRED):
         if (inc_mssg == AUTHORIZATION_REQUIRED):
@@ -88,7 +92,7 @@ class mssgThread(QtCore.QThread):
                 ERROR = True
                 self.new_mssg.emit(message)
 
-#GUI Class
+#Main GUI Class
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
 
@@ -174,10 +178,12 @@ class Ui_MainWindow(object):
         self.messageArea.returnPressed.connect(self.sendMessage)
         self.sendButton.clicked.connect(self.sendMessage)
 
+    #resets client positioning
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle('Chat Client')
 
+    #sends message to server
     def sendMessage(self): #Sends messages and pushes the message to the chatArea
         mssg = self.messageArea.text()
         if mssg != '':
@@ -187,11 +193,13 @@ class Ui_MainWindow(object):
                 tcpClient.send(mssg.encode("utf-8"))
             except socket.error as se:
                 self.chatArea.append("Error sending message:" + mssg)
-
+    #appends messages to the screen so the user can see them
     def appendMssg(self, mssg): #Appends incoming messages to the chatArea
-        self.chatArea.append(mssg)
-
-    def closeEvent(self, evnt): #Things to do when GUI closes (May not be working yet)
+        if mssg != '':
+            self.chatArea.append(mssg)
+    
+    #Things to do when GUI closes (May not be working yet)            
+    def closeEvent(self, event):
         THREAD_RUNNING = False
         mssg = 'exit'
         tcpClient.send(mssg.encode('utf-8'))
@@ -206,9 +214,11 @@ def isError(message):
     else:
         return False
     
-host = socket.gethostname() 
+host = '10.13.19.108' 
 port = 13000
 BUFFER_SIZE = 1024
+
+    
 
 def main(): 
 
@@ -216,16 +226,18 @@ def main():
     connection_response = tcpClient.recv(BUFFER_SIZE).decode("utf-8")
     connected = connection_response == CONNECTION_MADE_MESSAGE
     #print(connection_response)
+    #QtWidgets.QMessageBox.warning(self, 'Error', 'There are currently too many connections to this server, please try again later.')
 
-    #Start the GUI
-    app = QtWidgets.QApplication(sys.argv)
-    login = Login()
-    if login.exec_() == QtWidgets.QDialog.Accepted:
-        MainWindow = QtWidgets.QMainWindow()
-        ui = Ui_MainWindow()
-        ui.setupUi(MainWindow)
-        MainWindow.show()
-        sys.exit(app.exec_()) 
+    if connected:   
+        #Start the GUI
+        app = QtWidgets.QApplication(sys.argv)
+        login = Login()
+        if login.exec_() == QtWidgets.QDialog.Accepted:
+            MainWindow = QtWidgets.QMainWindow()
+            ui = Ui_MainWindow()
+            ui.setupUi(MainWindow)
+            MainWindow.show()
+            sys.exit(app.exec_()) 
 
 if __name__ == "__main__":    
     main()    
