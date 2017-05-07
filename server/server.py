@@ -74,6 +74,9 @@ class ClientThread(threading.Thread):
 
         def run(self):
                 self.signIn()
+                self.other_connections.append(self)
+                logging.debug("%s: Adding %s to the list of connected clients", now(LOG), self.userData[0])
+                logging.debug("%s: FROM CLIENT -- There are now %d connections to this server", now(LOG), len(self.other_connections))
                 while self.running:
                         try:
                             message = self.conn_socket.recv(MAX_MESSAGE_SIZE).decode("utf-8")
@@ -89,6 +92,9 @@ class ClientThread(threading.Thread):
                             logging.warn("%s: %s has disconnected. May be a normal log off : %s", now(LOG), self.userData[0], se)
                             self.running = False
                             self.conn_socket.close()
+                #if not running, remove from the list
+                self.other_connections.remove(self)
+                logging.debug("%s: %s has been removed from the list of clients", now(LOG), self.userData[0])
 
 
         def sendMessage(self, message):
@@ -112,6 +118,7 @@ class ClientThread(threading.Thread):
         #Sign in if match | Request new credentials if no match | create new user if no match is found
         def signIn(self):
             #Send authorization code to client
+            logging.debug("%s: Authorization required for user %s", now(LOG), self.userData[0])
             self.conn_socket.send(AUTHORIZATION_REQUIRED.encode('utf-8'))
             #While NOT authorized
             while(self.authorized == False):
@@ -121,17 +128,18 @@ class ClientThread(threading.Thread):
                 #split userData string into name & password, then put them into a list.
                 name, pword = self.userData.split(':')
                 self.userData = [name, pword]
+                logging.debug("%s: Credentials sent from %s -- {username: %s, password: %s}", now(LOG), self.ip, name, pword)
                 #Check if the authorization passes
                 authFlag = login.checkCreds(self.userData)
                 if authFlag == 0: #username and password match
-                    print("\nUser signed in: ", self.userData[0])
+                    logging.info("%s: User signed in: %s", now(LOG), self.userData[0])
                     self.conn_socket.send(AUTHORIZATION_PASS.encode('utf-8')) #send authorization pass to client
                     self.authorized = True
                 elif authFlag == 1: #incorrect password
                     self.conn_socket.send(AUTHORIZATION_FAIL.encode('utf-8')) #send authorization fail to client
-                    print("\nUser failed password attempt: ", self.userData[0])
+                    logging.info("%s: User failed password attempt: %s", now(LOG), self.userData[0])
                 else: #User created
-                    print("\nUser created: ", self.userData[0])
+                    logging.info("%s: User created: %s", now(LOG), self.userData[0])
                     self.conn_socket.send(AUTHORIZATION_PASS.encode('utf-8')) #send authorization pass to client
                     self.authorized = True
 
@@ -143,7 +151,7 @@ class Server:
     CURRENT_CONNECTION_ID = 0
     SERVER_LISTEN_PORT = 13000
     BUFFER_SIZE = 1024
-    MAX_CLIENT_COUNT = 20
+    MAX_CLIENT_COUNT = 2
 
     def __init__(self):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -158,18 +166,23 @@ class Server:
     def start(self):
         logging.info("%s: Starting server...", now(LOG))
         while self.running:
-            self.server.listen(4)
-            logging.info ("%s: Waiting for a connection...", now(LOG))
-            (conn, (ip, port)) = self.server.accept()
-            logging.info ("%s: Incoming connection attempt at %s on port %d", now(LOG), ip, port)
-            if len(self.clients) + 1 > Server.MAX_CLIENT_COUNT:
-                conn.send(TOO_MANY_CONNECTIONS_ERROR.encode("utf-8"))
-            else:
-                conn.send(CONNECTION_MADE_MESSAGE.encode("utf-8"))
-                newthread = ClientThread(Server.CURRENT_CONNECTION_ID, conn, ip, port, self.clients)
-                newthread.start()
-                self.clients.append(newthread)
-                Server.CURRENT_CONNECTION_ID += 1
+
+            try:
+                self.server.listen(4)
+                logging.info ("%s: Waiting for a connection...", now(LOG))
+                (conn, (ip, port)) = self.server.accept()
+                logging.info ("%s: Incoming connection attempt at %s on port %d", now(LOG), ip, port)
+                if len(self.clients) + 1 > Server.MAX_CLIENT_COUNT:
+                    logging.info("%s: Too many connections, not allowing connections from %s", now(LOG), ip)
+                    conn.send(TOO_MANY_CONNECTIONS_ERROR.encode("utf-8"))
+                else:
+                    conn.send(CONNECTION_MADE_MESSAGE.encode("utf-8"))
+                    newthread = ClientThread(Server.CURRENT_CONNECTION_ID, conn, ip, port, self.clients)
+                    Server.CURRENT_CONNECTION_ID += 1
+                    newthread.start()
+                    logging.debug("%s: FROM SERVER -- After starting the new client, there are now %d clients connected", now(LOG), len(self.clients))
+            except socket.error as se:
+                logging.error("%s: Something went wrong while waiting for a connection: %s", now(LOG), se)
 
             for client in self.clients:
                 client.other_connections = self.clients
