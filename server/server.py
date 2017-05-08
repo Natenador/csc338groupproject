@@ -62,7 +62,7 @@ def now(date_format):
 def getClientNames(clients):
     names = ""
     for client in range(len(clients)):
-        names += client.userData[0]
+        names += clients[client].userData[0]
         if client != len(clients) - 1:
             names += ":"
     return names 
@@ -84,6 +84,7 @@ class ClientThread(threading.Thread):
         def run(self):
                 self.signIn()
                 self.other_connections.append(self)
+                self.broadcast(LIST_OF_NAMES_MESSAGE + getClientNames(self.other_connections)) 
                 logging.debug("%s: Adding %s to the list of connected clients", now(LOG), self.userData[0])
                 logging.debug("%s: FROM CLIENT -- There are now %d connections to this server", now(LOG), len(self.other_connections))
                 while self.running:
