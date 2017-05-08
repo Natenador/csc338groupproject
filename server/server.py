@@ -6,6 +6,7 @@ import time
 import login_server as login
 
 TOO_MANY_CONNECTIONS_ERROR = "/e:-1"
+LIST_OF_NAMES_MESSAGE = "/names:"
 
 CONNECTION_MADE_MESSAGE = "Connected!"
 
@@ -56,7 +57,15 @@ def now(date_format):
         now = year + day + month + "." + hour + minute + second
 
     return now
- 
+
+#Goes through every client and appends each client name to a string, separated by a ':'
+def getClientNames(clients):
+    names = ""
+    for client in range(len(clients)):
+        names += client.userData[0]
+        if client != len(clients) - 1:
+            names += ":"
+    return names 
 
 class ClientThread(threading.Thread):        
         def __init__(self, id, conn_socket, ip, port, clients):
@@ -94,6 +103,7 @@ class ClientThread(threading.Thread):
                             self.conn_socket.close()
                 #if not running, remove from the list
                 self.other_connections.remove(self)
+                self.broadcast(LIST_OF_NAMES_MESSAGE + getClientNames(self.other_connections)) 
                 logging.debug("%s: %s has been removed from the list of clients", now(LOG), self.userData[0])
 
 
