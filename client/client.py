@@ -9,6 +9,8 @@ AUTHORIZATION_REQUIRED = "AUTH_REQ"
 AUTHORIZATION_PASS = "AUTH_PASS"
 AUTHORIZATION_FAIL = "AUTH_FAIL"
 
+LIST_OF_NAMES_MESSAGE = '/names:'
+
 CONNECTION_MADE_MESSAGE = "Connected!"
 
 tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -72,6 +74,7 @@ def signIn(inc_mssg, username, pword):
 #Worker thread class for receiving messages
 class mssgThread(QtCore.QThread):
     new_mssg = QtCore.pyqtSignal(str)
+    client_list = QtCore.pyqtSignal(str)
 
     def __init__(self):
         QtCore.QThread.__init__(self)
@@ -86,7 +89,10 @@ class mssgThread(QtCore.QThread):
                     ERROR = True
                 else:
                     message = message.decode('utf-8')
-                    self.new_mssg.emit(message)
+                    if message[:7] == LIST_OF_NAMES_MESSAGE:
+                    	self.client_list.emit(message)
+                    else:
+                    	self.new_mssg.emit(message)
             except socket.error as se:
                 message = "Error receiving message! Socket may have closed."
                 ERROR = True
@@ -99,6 +105,7 @@ class Ui_MainWindow(object):
         self.thread = mssgThread()
         self.thread.start()
         self.thread.new_mssg.connect(self.appendMssg)
+        self.thread.client_list.connect(self.updateClientList)
 
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(800, 600)
@@ -197,6 +204,12 @@ class Ui_MainWindow(object):
     def appendMssg(self, mssg): #Appends incoming messages to the chatArea
         if mssg != '':
             self.chatArea.append(mssg)
+
+    def updateClientList(self, mssg):
+    	nameList = mssg.split(':')
+    	self.userArea.clear()
+    	for name in range(1, len(nameList)):
+    		self.userArea.append(nameList[name])
     
     #Things to do when GUI closes (May not be working yet)            
     def closeEvent(self, event):
@@ -213,8 +226,9 @@ def isError(message):
         return True
     else:
         return False
-    
-host = '10.13.19.108' 
+
+#host = '10.13.14.40' 
+host = '127.0.0.1'
 port = 13000
 BUFFER_SIZE = 1024
 

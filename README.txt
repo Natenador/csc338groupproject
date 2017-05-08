@@ -1,0 +1,1 @@
+cx_freeze build options --target-dir --compress --base-name=Win32GUI
