@@ -84,7 +84,7 @@ class ClientThread(threading.Thread):
         def run(self):
                 self.signIn()
                 self.other_connections.append(self)
-                self.broadcast(LIST_OF_NAMES_MESSAGE + getClientNames(self.other_connections)) 
+                self.broadcastToAll(LIST_OF_NAMES_MESSAGE + getClientNames(self.other_connections)) 
                 logging.debug("%s: Adding %s to the list of connected clients", now(LOG), self.userData[0])
                 logging.debug("%s: FROM CLIENT -- There are now %d connections to this server", now(LOG), len(self.other_connections))
                 while self.running:
@@ -104,7 +104,7 @@ class ClientThread(threading.Thread):
                             self.conn_socket.close()
                 #if not running, remove from the list
                 self.other_connections.remove(self)
-                self.broadcast(LIST_OF_NAMES_MESSAGE + getClientNames(self.other_connections)) 
+                self.broadcastToAll(LIST_OF_NAMES_MESSAGE + getClientNames(self.other_connections)) 
                 logging.debug("%s: %s has been removed from the list of clients", now(LOG), self.userData[0])
 
 
@@ -118,10 +118,14 @@ class ClientThread(threading.Thread):
                 self.running = True
 
         def broadcast(self, message):
-                logging.info("%s: %s is sending '%s' to all clients", now(LOG), self.userData[0], message)
+                logging.info("%s: %s is sending '%s' to all clients but itself", now(LOG), self.userData[0], message)
                 for client in self.other_connections:
                         if client.id != self.id and client.running:
                                 client.sendMessage(message)
+        def broadcastToAll(self, message):
+            logging.info("%s: %s is sending '%s' to all clients including itself", now(LOG), self.userData[0], message)
+            for client in self.other_connections:
+                client.sendMessage(message)
 
         #TWM - signIn functionality for login
         #Requests user credentials from client - sets userData equal to these credentials
