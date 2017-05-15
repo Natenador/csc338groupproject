@@ -1,0 +1,1 @@
+This is just here so git will push the logging/serverlogs directory to the repository
