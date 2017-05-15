@@ -13,10 +13,59 @@ LIST_OF_NAMES_MESSAGE = '/names:'
 
 CONNECTION_MADE_MESSAGE = "Connected!"
 
-tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
 USERNAME = ''
 THREAD_RUNNING = False
+connected = ''
+
+tcpClient = ''
+
+host = ''
+PORT = 13000
+BUFFER_SIZE = 1024
+
+class IpWindow(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(IpWindow, self).__init__(parent)
+        self.ipAddress = QtWidgets.QLineEdit(self)
+        self.ipLabel = QtWidgets.QLabel('IP Address: ', self)
+        self.buttonIp = QtWidgets.QPushButton('Connect', self)
+        self.buttonIp.clicked.connect(self.handleIp)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.ipLabel)
+        layout.addWidget(self.ipAddress)
+        layout.addWidget(self.buttonIp)
+        self.resize(300,100)
+        self.setWindowIcon(QtGui.QIcon('clientIcon.png'))
+        self.setWindowTitle('IP Connection')
+        self.setStyleSheet("QDialog {background: rgb(108,108,108); font-size: 12px; font-family:Arial, Helvetica, sans-serif} QLabel {font-size: 12px; font-family:Arial, Helvetica, sans-serif; color: white} QPushButton {background: rgb(165,67,67); font-size: 12px; font-family:Arial, Helvetica, sans-serif; font-weight: bold} ")
+
+    def handleIp(self):
+        global host
+        global connected
+        global tcpClient
+
+        host = self.ipAddress.text()
+        self.ipAddress.clear()
+        try:
+            tcpClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            tcpClient.connect((host, PORT))
+            connection_response = tcpClient.recv(BUFFER_SIZE).decode("utf-8")
+            connected = connection_response == CONNECTION_MADE_MESSAGE
+            if connected:
+                self.accept()
+            else:
+                tcpClient.close()
+                QtWidgets.QMessageBox.warning(self, 'Error', 'There are too many connections to that server at this time.')
+                connected = ''
+        except socket.error as se:
+            print(se)
+            print(host)
+            print("\nExcept block.")
+            if connected != '':
+                tcpClient.close()
+                QtWidgets.QMessageBox.warning(self, 'Error', 'There are too many connections to that server at this time.')
+            else:
+                QtWidgets.QMessageBox.warning(self, 'Error', 'Invalid IP Address.')
 
 #Login popup window
 class Login(QtWidgets.QDialog):
@@ -90,9 +139,9 @@ class mssgThread(QtCore.QThread):
                 else:
                     message = message.decode('utf-8')
                     if message[:7] == LIST_OF_NAMES_MESSAGE:
-                    	self.client_list.emit(message)
+                        self.client_list.emit(message)
                     else:
-                    	self.new_mssg.emit(message)
+                        self.new_mssg.emit(message)
             except socket.error as se:
                 message = "Error receiving message! Socket may have closed."
                 ERROR = True
@@ -206,10 +255,10 @@ class Ui_MainWindow(object):
             self.chatArea.append(mssg)
 
     def updateClientList(self, mssg):
-    	nameList = mssg.split(':')
-    	self.userArea.clear()
-    	for name in range(1, len(nameList)):
-    		self.userArea.append(nameList[name])
+        nameList = mssg.split(':')
+        self.userArea.clear()
+        for name in range(1, len(nameList)):
+            self.userArea.append(nameList[name])
     
     #Things to do when GUI closes (May not be working yet)            
     def closeEvent(self, event):
@@ -225,26 +274,17 @@ def isError(message):
         print ("There are currently too many connections to this server, please try again later.")
         return True
     else:
-        return False
+        return False    
 
-#host = '10.13.14.40' 
-host = '127.0.0.1'
-port = 13000
-BUFFER_SIZE = 1024
-
-    
-
-def main(): 
-
-    tcpClient.connect((host, port))
-    connection_response = tcpClient.recv(BUFFER_SIZE).decode("utf-8")
-    connected = connection_response == CONNECTION_MADE_MESSAGE
+def main():
+    #Start the GUI 
+    app = QtWidgets.QApplication(sys.argv)
+    ip = IpWindow()
+    ip.exec_()    
     #print(connection_response)
     #QtWidgets.QMessageBox.warning(self, 'Error', 'There are currently too many connections to this server, please try again later.')
 
     if connected:   
-        #Start the GUI
-        app = QtWidgets.QApplication(sys.argv)
         login = Login()
         if login.exec_() == QtWidgets.QDialog.Accepted:
             MainWindow = QtWidgets.QMainWindow()
